@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import joblib
 import os
+import gdown
 import base64
 import warnings
 warnings.filterwarnings('ignore')
@@ -20,6 +21,9 @@ st.set_page_config(
 
 # ─── HELPER: load icon as base64 ─────────────────────────────────────────────
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+ROOT_DIR = os.path.dirname(BASE_DIR)
+
+GOOGLE_DRIVE_FILE_ID = "11pCerupC1jOV8_AFEITzAeafuw8C8l_f"
 
 def icon_b64(name):
     path = os.path.join(BASE_DIR, 'assets', f'{name}.png')
@@ -207,12 +211,24 @@ hr { border-color: #1e2740; }
 """, unsafe_allow_html=True)
 
 # ─── LOAD DATA & MODEL ────────────────────────────────────────────────────────
-@st.cache_data
+@st.cache_data(show_spinner=True)
 def load_data():
-    csv_path = os.path.join(BASE_DIR, '..', 'dataset', 'creditcard.csv')
-    if not os.path.exists(csv_path):
-        csv_path = os.path.join(BASE_DIR, 'creditcard.csv')
-    return pd.read_csv(csv_path)
+    dataset_dir = os.path.join(ROOT_DIR, "dataset")
+    os.makedirs(dataset_dir, exist_ok=True)
+
+    csv_path = os.path.join(dataset_dir, "creditcard.csv")
+
+    if os.path.exists(csv_path):
+        return pd.read_csv(csv_path)
+
+    url = f"https://drive.google.com/uc?id={GOOGLE_DRIVE_FILE_ID}"
+
+    try:
+        gdown.download(url, csv_path, quiet=False)
+        return pd.read_csv(csv_path)
+    except Exception as e:
+        st.error(f"Gagal mengunduh dataset dari Google Drive: {e}")
+        st.stop()
 
 @st.cache_resource
 def load_models():
